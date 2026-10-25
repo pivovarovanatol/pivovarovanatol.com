@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sport Highlighter</title>
+  <meta name="description" content="Film your kid's hockey game, get a reel of just your kid. Computer vision finds a player by jersey number across a full game." />
+  <meta property="og:title" content="Sport Highlighter" />
+  <meta property="og:description" content="Film your kid's hockey game, get a reel of just your kid. Work in progress, sneak peek available." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../project.css" />
+  <style>
+    /* pipeline */
+    .pipe { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; counter-reset: p; }
+    .pipe li { list-style: none; position: relative; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px 12px 14px; }
+    .pipe li::before { counter-increment: p; content: counter(p, decimal-leading-zero); display: block; font-family: 'JetBrains Mono', monospace; font-size: .68rem; color: var(--hue); margin-bottom: 6px; }
+    .pipe li:not(:last-child)::after { content: "→"; position: absolute; right: -10px; top: 50%; transform: translate(50%, -50%); color: var(--text-dim); font-size: .9rem; z-index: 1; }
+    .pipe b { display: block; font-size: .92rem; line-height: 1.3; margin-bottom: 4px; }
+    .pipe span { display: block; font-size: .78rem; color: var(--text-muted); line-height: 1.45; }
+    .pipe code { font-size: .72rem; color: var(--text); }
+    @media (max-width: 860px) {
+      .pipe { grid-template-columns: 1fr 1fr; }
+      .pipe li::after { display: none; }
+    }
+    @media (max-width: 480px) { .pipe { grid-template-columns: 1fr; } }
+
+    /* timeline illustration */
+    .tl { margin-top: 1.8rem; }
+    .tl-row { display: grid; grid-template-columns: 90px 1fr; gap: 12px; align-items: center; margin-bottom: 10px; font-size: .78rem; color: var(--text-muted); }
+    .tl-bar { position: relative; height: 22px; border-radius: 5px; background: var(--bg3); overflow: hidden; }
+    .tl-bar i { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+    .tl-bar.see i { background: #fff; width: 2px; }
+    .tl-bar.win i { background: color-mix(in srgb, var(--hue) 45%, transparent); }
+    .tl-bar.reel i { background: var(--hue); }
+    .tl-axis { display: flex; justify-content: space-between; margin-left: 102px; font-family: 'JetBrains Mono', monospace; font-size: .66rem; color: var(--text-dim); }
+    @media (max-width: 480px) { .tl-row { grid-template-columns: 64px 1fr; } .tl-axis { margin-left: 76px; } }
+  </style>
+</head>
+<body style="--hue: #60a5fa;">
+
+  <nav class="pnav">
+    <div class="container">
+      <a href="/" class="logo">AP</a>
+      <a href="/#projects" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>All projects</a>
+    </div>
+  </nav>
+
+  <header class="phero">
+    <div class="container">
+      <span class="ptag">Python · computer vision</span>
+      <h1>Sport Highlighter</h1>
+      <p class="one">Film your kid's hockey game, <b>get a reel of just your kid.</b> It finds one player by jersey number across a whole game and cuts their shifts into a single video, so nobody has to scrub through 90 minutes of footage.</p>
+      <div class="btns">
+        <a class="btn primary" href="https://highlighter.pivovarovanatol.com" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          Take a sneak peek
+        </a>
+        <a class="btn" href="#how">How it works</a>
+      </div>
+      <div class="meta"><span class="wip">Work in progress</span><span>Hockey first</span><span>Runs locally on a Mac</span></div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="showcase pad">
+      <p class="label" style="margin-bottom:1.1rem;">From one long video to one short reel</p>
+      <ol class="pipe">
+        <li><b>Upload the game</b><span>One handheld camera, a full 90-minute game.</span></li>
+        <li><b>Find every skater</b><span>A YOLO detector marks each player, frame by frame.</span></li>
+        <li><b>Follow them</b><span>ByteTrack links detections into short tracks of the same person.</span></li>
+        <li><b>Split the teams</b><span>Jersey colours separate home from away.</span></li>
+        <li><b>Read the number</b><span>A small vision model, running on the Mac, reads jersey numbers.</span></li>
+        <li><b>Cut the reel</b><span>Every confident sighting becomes a padded window; the windows join into one video.</span></li>
+      </ol>
+      <div class="tl" aria-hidden="true">
+        <div class="tl-row"><span>sightings</span><div class="tl-bar see" id="see"></div></div>
+        <div class="tl-row"><span>±20 s windows</span><div class="tl-bar win" id="win"></div></div>
+        <div class="tl-row"><span id="reelLen">the reel</span><div class="tl-bar reel" id="reel"></div></div>
+        <div class="tl-axis"><span>0:00</span><span>game time</span><span>90:00</span></div>
+      </div>
+    </div>
+    <p class="caption">No screenshots here on purpose: the footage is of kids' games, and it stays private.</p>
+  </div>
+
+  <section class="psec" style="margin-top:56px;" id="how">
+    <div class="container split" style="align-items:start;">
+      <div>
+        <p class="label">The idea</p>
+        <h2>A shift reel, not a highlight reel.</h2>
+        <div class="prose">
+          <p>Hockey parents film whole games to watch one player. Finding the three minutes that matter means scrubbing the whole thing, and doing it again to make something you can send to grandma.</p>
+          <p>Picking out "goals and great plays" automatically is hard and often wrong. Showing <b>every shift your kid played</b> is a job a computer can actually do well: find them, keep a little context around each sighting, and stitch it together.</p>
+        </div>
+      </div>
+      <div>
+        <p class="label">Why jersey numbers</p>
+        <h2>The number is the identity.</h2>
+        <div class="prose">
+          <p>Teammates look alike: same jersey, same helmet, same skates. Matching by appearance mixes them up. So the reel is anchored on <b>(team, jersey number)</b>: a player only counts as found when their number is read with confidence.</p>
+          <p>Appearance matching still helps keep a track going between sightings, but it no longer decides who is who.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="psec">
+    <div class="container">
+      <p class="label">Where it stands</p>
+      <h2>Honest numbers, measured properly.</h2>
+      <p class="prose">The first reels work end to end, and I measure them against hand-labelled footage instead of eyeballing. Today a reel catches about half of a player's ice time. The bar it has to clear before I'd call it done:</p>
+      <div class="stats">
+        <div class="stat"><b>85%</b><span>of the player's ice time in the reel</span></div>
+        <div class="stat"><b>&lt;1%</b><span>time showing the wrong player</span></div>
+        <div class="stat"><b>≤5%</b><span>time spent on the bench</span></div>
+      </div>
+      <div class="note"><b>Local first.</b> Everything runs on an Apple-silicon Mac: detection, tracking and the vision model. Cloud GPUs are an option for later, not a requirement.</div>
+      <div class="chips">
+        <span>Python</span><span>FastAPI</span><span>YOLO11</span><span>ByteTrack</span><span>Qwen3-VL on MLX</span><span>Next.js</span><span>React</span><span>SQLite</span><span>Cloudflare Tunnel</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="psec">
+    <div class="container">
+      <p class="label">More projects</p>
+      <div class="more">
+        <a href="/labyrinth/"><b>Labyrinth of Reflections</b><span>Story-first RPG in Unreal Engine 5, built by AI agents</span></a>
+        <a href="/umnik/"><b>Umnik AI</b><span>Personal assistant mixing frontier and local models</span></a>
+        <a href="/neo-matrix-rain/"><b>Neo Matrix Rain</b><span>Native digital rain screensaver for macOS</span></a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="pfoot">
+    <div class="container">
+      <p>The sneak peek runs on my own machine, so it may be offline at times.</p>
+      <p>Made by <a href="/">Anatoliy Pivovarov</a> · <a href="/#contact">Get in touch</a></p>
+    </div>
+  </footer>
+
+  <script>
+    // Illustrative timeline: random sightings -> padded windows -> merged reel.
+    (() => {
+      const GAME = 90 * 60, PAD = 20;
+      let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      const shifts = []; let t = 60;
+      while (t < GAME - 60) { const len = 35 + rnd() * 25; if (rnd() < 0.55) shifts.push([t, t + len]); t += len + 60 + rnd() * 90; }
+      const sightings = [];
+      shifts.forEach(([a, b]) => { const n = 1 + (rnd() * 3 | 0); for (let i = 0; i < n; i++) if (rnd() < 0.8) sightings.push(a + rnd() * (b - a)); });
+      const wins = sightings.map(s => [Math.max(0, s - PAD), Math.min(GAME, s + PAD)]).sort((x, y) => x[0] - y[0]);
+      const merged = []; wins.forEach(w => { const l = merged[merged.length - 1]; if (l && w[0] <= l[1]) l[1] = Math.max(l[1], w[1]); else merged.push([...w]); });
+      const pct = v => (v / GAME * 100).toFixed(3) + '%';
+      const put = (id, items, point) => { const el = document.getElementById(id); items.forEach(it => { const i = document.createElement('i'); if (point) i.style.left = pct(it); else { i.style.left = pct(it[0]); i.style.width = pct(it[1] - it[0]); } el.appendChild(i); }); };
+      put('see', sightings, true); put('win', wins);
+      // the reel: the merged windows packed end to end, on the same scale as the game
+      let x = 0; const packed = merged.map(([a, b]) => { const seg = [x, x + (b - a)]; x += (b - a) + 8; return seg; });
+      put('reel', packed);
+      const mins = Math.round(merged.reduce((s, [a, b]) => s + b - a, 0) / 60);
+      document.getElementById('reelLen').textContent = `the reel: ~${mins} min`;
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Umnik AI</title>
+  <meta name="description" content="A personal AI assistant on Telegram and the phone, with memory and daily routines. A frontier model plans; open models on a Mac do the work." />
+  <meta property="og:title" content="Umnik AI" />
+  <meta property="og:description" content="A personal AI assistant on Telegram and the phone. A frontier model plans; open models on a Mac do the work." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../project.css" />
+  <style>
+    /* flow diagram */
+    .flow { display: grid; grid-template-columns: 1fr 40px 1.25fr 40px 1.2fr; align-items: center; gap: 0; }
+    .col { display: grid; gap: 10px; }
+    .node { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+    .node .k { font-family: 'JetBrains Mono', monospace; font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px; }
+    .node b { display: block; font-size: .95rem; line-height: 1.3; }
+    .node span { display: block; font-size: .8rem; color: var(--text-muted); margin-top: 3px; line-height: 1.45; }
+    .node.core { border-color: color-mix(in srgb, var(--hue) 55%, transparent); box-shadow: 0 0 0 4px var(--accent-glow); padding: 16px; }
+    .node.core .k { color: var(--hue); }
+    .node.closed { border-left: 3px solid var(--orange); }
+    .node.open { border-left: 3px solid var(--green); }
+    .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+    .tags i { font-style: normal; font-family: 'JetBrains Mono', monospace; font-size: .66rem; padding: .15rem .45rem; border-radius: 4px; background: var(--bg3); color: var(--text-muted); }
+    .arrow { text-align: center; color: var(--text-dim); font-size: 1.1rem; }
+    .legend { display: flex; gap: 1.2rem; flex-wrap: wrap; margin-top: 1rem; font-size: .78rem; color: var(--text-muted); }
+    .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: .4rem; vertical-align: -1px; }
+    @media (max-width: 860px) {
+      .flow { grid-template-columns: 1fr; gap: 6px; }
+      .arrow { transform: rotate(90deg); padding: 2px 0; }
+    }
+    .split-cost { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 2rem; }
+    .split-cost .card h3 { display: flex; align-items: center; gap: .5rem; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    @media (max-width: 860px) { .split-cost { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body style="--hue: #9b8cf9;">
+
+  <nav class="pnav">
+    <div class="container">
+      <a href="/" class="logo">AP</a>
+      <a href="/#projects" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>All projects</a>
+    </div>
+  </nav>
+
+  <header class="phero">
+    <div class="container">
+      <span class="ptag">AI · personal assistant</span>
+      <h1>Umnik AI</h1>
+      <p class="one">My personal AI assistant. I text it on Telegram or call it on the phone, and it remembers. <b>It's also my test bench for closed vs open models:</b> a frontier model plans, open models on my Mac do the subtasks, and I keep measuring which jobs really need the expensive one.</p>
+      <div class="meta"><span class="live">Always on</span><span>Hermes Agent</span><span>Telegram + voice</span><span>Private project</span></div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="showcase pad">
+      <p class="label" style="margin-bottom:1.1rem;">How a message flows</p>
+      <div class="flow">
+        <div class="col">
+          <div class="node"><div class="k">Me</div><b>💬 Telegram</b><span>Text, photos, voice notes</span></div>
+          <div class="node"><div class="k">Me</div><b>📞 Phone call</b><span>Talk to it like a person, in a natural voice</span></div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="node core">
+          <div class="k">Home server, always on</div>
+          <b>Umnik on Hermes Agent</b>
+          <span>Persona, long-term memory, skills and scheduled routines. Restarts itself if anything falls over.</span>
+          <div class="tags"><i>memory</i><i>skills</i><i>routines</i><i>watchdog</i></div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="col">
+          <div class="node closed"><div class="k">Plans</div><b>Frontier model</b><span>GPT-5.6 on a flat-rate subscription: breaks the task down and decides who does what.</span></div>
+          <div class="node open"><div class="k">Does</div><b>Open models on my Mac</b><span>Qwen 3.5 9B for everyday subtasks and vision; gpt-oss 20B for code and review.</span></div>
+        </div>
+      </div>
+      <div class="legend"><span><i style="background:var(--orange)"></i>closed model</span><span><i style="background:var(--green)"></i>open-weight model, running locally</span></div>
+    </div>
+  </div>
+
+  <section class="psec" style="margin-top:56px;">
+    <div class="container">
+      <p class="label">What it does</p>
+      <h2>An assistant that lives with me.</h2>
+      <div class="cards">
+        <div class="card"><div class="ico">🧠</div><h3>Remembers</h3><p>A persona, a profile of me, and dated daily notes it can search.</p></div>
+        <div class="card"><div class="ico">🌅</div><h3>Keeps routines</h3><p>A morning voice briefing, an evening check-in, nightly backups. Scheduled jobs, not prompts I have to remember.</p></div>
+        <div class="card"><div class="ico">🛠️</div><h3>Uses skills</h3><p>Small tools it can call, like posting to X or wrapping up a session. New skills are just files.</p></div>
+        <div class="card"><div class="ico">🗣️</div><h3>Talks</h3><p>Phone calls with speech-to-text in, a natural synthetic voice out.</p></div>
+        <div class="card"><div class="ico">👁️</div><h3>Sees</h3><p>Send a photo and a local vision model describes it, no cloud round trip.</p></div>
+        <div class="card"><div class="ico">🔁</div><h3>Heals itself</h3><p>A watchdog brings the gateway, dashboard and voice back within five minutes of a failure.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="psec">
+    <div class="container">
+      <p class="label">Closed vs open models</p>
+      <h2>Price, speed, quality: pick per task, not per assistant.</h2>
+      <div class="prose">
+        <p>Running everything on a frontier API is easy and expensive. Running everything locally is free and often not good enough. Umnik is where I find the line, task by task: <b>what does each job cost, how long does it take, and is the answer good enough?</b></p>
+      </div>
+      <div class="split-cost">
+        <div class="card"><h3><span class="dot" style="background:var(--orange)"></span>Planning</h3><p>Ambiguous requests and multi-step plans go to the frontier model. Quality matters most here. A flat-rate subscription keeps the bill predictable.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--green)"></span>Everyday subtasks</h3><p>Summaries, lookups, photo descriptions: a 9B open model on the Mac is fast enough and costs nothing per call.</p></div>
+        <div class="card"><h3><span class="dot" style="background:var(--green)"></span>Code and review</h3><p>A 20B open model handles coding and review passes locally.</p></div>
+      </div>
+      <div class="note"><b>The real constraint is memory, not money.</b> The Mac has 36 GB of unified memory, so at most two local helpers run at once. Hardware, not the API bill, sets the limit.</div>
+    </div>
+  </section>
+
+  <section class="psec">
+    <div class="container split" style="align-items:start;">
+      <div>
+        <p class="label">The journey</p>
+        <h2>Rebuilt once, on purpose.</h2>
+        <div class="prose">
+          <p>Umnik started on <b>OpenClaw</b>, an open-source agent framework. This year I moved it to <b>Hermes Agent</b>: the scheduled routines came along, and OpenClaw stays archived as a fallback.</p>
+          <p>The move also let me split the work between a closed planner and open local models, instead of sending everything to one API.</p>
+        </div>
+      </div>
+      <div>
+        <p class="label">Built with</p>
+        <h2>Pieces.</h2>
+        <div class="chips">
+          <span>Hermes Agent</span><span>GPT-5.6</span><span>Ollama</span><span>Qwen 3.5 9B</span><span>gpt-oss 20B</span><span>Telegram</span><span>Twilio</span><span>ElevenLabs</span><span>Ubuntu</span><span>Tailscale</span>
+        </div>
+        <p class="caption" style="margin-top:1.2rem;">Private project. The code isn't public, but I'm happy to talk about how it's put together.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="psec">
+    <div class="container">
+      <p class="label">More projects</p>
+      <div class="more">
+        <a href="/labyrinth/"><b>Labyrinth of Reflections</b><span>Story-first RPG in Unreal Engine 5, built by AI agents</span></a>
+        <a href="/sport-highlighter/"><b>Sport Highlighter</b><span>A reel of just your kid from a full hockey game</span></a>
+        <a href="/shuffle-slideshow/"><b>Shuffle Slideshow</b><span>Google Photos albums in true random order</span></a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="pfoot">
+    <div class="container">
+      <p>Made by <a href="/">Anatoliy Pivovarov</a> · <a href="/#contact">Get in touch</a></p>
+    </div>
+  </footer>
+</body>
+</html>

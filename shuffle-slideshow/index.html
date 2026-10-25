@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shuffle Slideshow</title>
+  <meta name="description" content="A Chrome extension that plays a Google Photos album as a fullscreen slideshow in true random order." />
+  <meta property="og:title" content="Shuffle Slideshow for Google Photos" />
+  <meta property="og:description" content="Play a Google Photos album as a fullscreen slideshow in true random order. Open source Chrome extension." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../project.css" />
+  <style>
+    .demo { display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: center; }
+    /* replica of the extension popup, using its own styles */
+    .popup { width: 286px; padding: 14px 16px 16px; background: #fff; color: #1f2330; border-radius: 12px; font: 14px system-ui, -apple-system, "Segoe UI", sans-serif; box-shadow: 0 18px 50px rgba(0,0,0,.45); justify-self: center; }
+    .popup h4 { margin: 0; font-size: 16px; }
+    .popup .sub { margin: 2px 0 10px; color: #6b7180; font-size: 12px; }
+    .popup .modes { display: flex; gap: 4px; margin: 8px 0 6px; padding: 4px; background: #eef0f4; border-radius: 10px; }
+    .popup .mode { flex: 1; padding: 7px 8px; border: 0; border-radius: 7px; background: transparent; color: #5b6070; font: inherit; font-weight: 600; cursor: pointer; }
+    .popup .mode.active { background: #fff; color: #1f2330; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+    .popup .desc { margin: 2px 0 10px; font-size: 11px; line-height: 1.5; color: #8b909c; min-height: 33px; }
+    .popup .row { display: flex; align-items: center; justify-content: space-between; margin: 8px 0; color: #363b49; }
+    .popup .row small { color: #9aa0ac; font-size: 11px; }
+    .popup .row input { width: 84px; padding: 5px 8px; border: 1px solid #d6d9e0; border-radius: 7px; font: inherit; color: #1f2330; background: #fff; }
+    .popup .check { display: flex; align-items: center; gap: 8px; margin: 7px 0; color: #363b49; }
+    .popup .check input { width: 15px; height: 15px; accent-color: #6366f1; }
+    .popup .start { width: 100%; margin-top: 12px; padding: 10px; border: 0; border-radius: 9px; background: #6366f1; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .popup .start:hover { background: #5457e5; }
+
+    /* slideshow demo */
+    .stage { position: relative; aspect-ratio: 16 / 10; border-radius: 12px; overflow: hidden; background: #000; border: 1px solid var(--border); }
+    .slide { position: absolute; inset: 0; display: grid; place-items: center; opacity: 0; transition: opacity .8s ease; }
+    .slide.on { opacity: 1; }
+    .slide span { font-family: 'JetBrains Mono', monospace; font-size: clamp(2rem, 6vw, 3.6rem); font-weight: 500; color: rgba(255,255,255,.92); text-shadow: 0 2px 20px rgba(0,0,0,.35); }
+    .hud { position: absolute; left: 12px; right: 12px; bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: .7rem; color: rgba(255,255,255,.8); }
+    .bag { display: flex; gap: 5px; margin-top: 14px; flex-wrap: wrap; }
+    .bag i { width: 22px; height: 22px; border-radius: 5px; border: 1px solid var(--border); display: grid; place-items: center; font-style: normal; font-family: 'JetBrains Mono', monospace; font-size: .62rem; color: var(--text-dim); transition: background .3s, color .3s; }
+    .bag i.seen { color: #0a0a0a; }
+    .bag i.now { outline: 2px solid #fff; outline-offset: 1px; }
+    .ctrl { display: flex; gap: .5rem; margin-top: 12px; }
+    .ctrl button { font: inherit; font-size: .82rem; padding: .45rem .85rem; border-radius: 7px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); cursor: pointer; }
+    .ctrl button:hover { border-color: var(--hue); }
+    @media (max-width: 860px) { .demo { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body style="--hue: #facc15;">
+
+  <nav class="pnav">
+    <div class="container">
+      <a href="/" class="logo">AP</a>
+      <a href="/#projects" class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>All projects</a>
+    </div>
+  </nav>
+
+  <header class="phero">
+    <div class="container">
+      <span class="ptag">JavaScript · Chrome extension</span>
+      <h1>Shuffle Slideshow<br />for Google Photos</h1>
+      <p class="one">Plays a Google Photos album as a fullscreen slideshow in <b>true random order</b>, the one thing Google Photos won't do. Its own slideshow is always chronological.</p>
+      <div class="btns">
+        <a class="btn primary" href="https://github.com/pivovarovanatol/gphotos-shuffle-slideshow" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+          Get it on GitHub
+        </a>
+        <a class="btn" href="#install">How to install</a>
+      </div>
+      <div class="meta"><span class="live">Works today</span><span>Manifest V3</span><span>100% local</span><span>MIT licence</span></div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="showcase pad">
+      <div class="demo">
+        <div class="popup" aria-label="The extension's popup">
+          <h4>🔀 Shuffle Slideshow</h4>
+          <p class="sub">for Google Photos</p>
+          <div class="modes">
+            <button class="mode active" data-mode="scraper" type="button">Open album</button>
+            <button class="mode" data-mode="picker" type="button">Pick photos</button>
+          </div>
+          <p class="desc" id="desc">Plays the album you have open in a Google Photos tab. No setup.</p>
+          <label class="row"><span>Seconds per photo</span><input id="secs" type="number" min="1" max="10" step="0.5" value="2.5" /></label>
+          <label class="row" id="maxRow"><span>Max photos <small>(0 = all)</small></span><input type="number" value="0" readonly /></label>
+          <label class="check"><input type="checkbox" checked disabled /> <span>Loop forever</span></label>
+          <label class="check"><input id="fade" type="checkbox" checked /> <span>Crossfade transition</span></label>
+          <button class="start" id="start" type="button">▶ Start slideshow</button>
+        </div>
+        <div>
+          <div class="stage" id="stage" aria-label="Slideshow demo with numbered placeholder photos">
+            <div class="hud"><span id="count">1 / 12</span><span>shuffled · no repeats</span></div>
+          </div>
+          <div class="bag" id="bag" aria-hidden="true"></div>
+          <div class="ctrl">
+            <button type="button" id="pause">Pause</button>
+            <button type="button" id="next">Next →</button>
+            <button type="button" id="reshuffle">Reshuffle</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="caption">A working replica of the popup and a demo of the shuffle, using numbered placeholders instead of anyone's photos. Each tile shows once before any repeats.</p>
+  </div>
+
+  <section class="psec" style="margin-top:56px;">
+    <div class="container">
+      <p class="label">Two modes</p>
+      <h2>Two ways in, two trade-offs.</h2>
+      <p class="prose">In 2025 Google removed the API that let apps list and read your existing library. That leaves two routes: read the album you have open, or use Google's official picker and choose photos by hand. The extension does both, with a switch at the top of the popup.</p>
+      <div class="cards two">
+        <div class="card">
+          <div class="ico">📂</div>
+          <h3>Open album</h3>
+          <p>Reads the album open in your Google Photos tab, scrolling it in the background to collect every photo, then shuffles and plays. <b style="color:var(--text);font-weight:500">No setup</b>, works with shared albums, and starts on the first photo while it keeps reading. Personal use only, since it reads Google's page directly.</p>
+        </div>
+        <div class="card">
+          <div class="ico">✅</div>
+          <h3>Pick photos</h3>
+          <p>Uses Google's official Photos Picker API with sign-in. You choose the photos or an album, and the slideshow starts on its own. Needs a one-time OAuth setup, and it's the route that could go to the Chrome Web Store.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="psec">
+    <div class="container split" style="align-items:start;">
+      <div>
+        <p class="label">Features</p>
+        <h2>Small, and does one thing well.</h2>
+        <div class="cards" style="grid-template-columns:1fr; gap:12px;">
+          <div class="card"><h3>🔀 True shuffle</h3><p>A Fisher–Yates "bag": no repeats until every photo has been shown, then a fresh shuffle.</p></div>
+          <div class="card"><h3>🖼️ Fullscreen with crossfades</h3><p>Smooth fades or instant cuts. Change speed live; loop forever or stop after one pass.</p></div>
+          <div class="card"><h3>🔒 Nothing leaves your browser</h3><p>No server, no analytics. Photos load straight from Google into the tab.</p></div>
+        </div>
+      </div>
+      <div>
+        <p class="label">Controls</p>
+        <h2>Keyboard first.</h2>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <tr><th>Key</th><th>Action</th></tr>
+            <tr><td><kbd>Space</kbd></td><td>Play / pause</td></tr>
+            <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Previous / next</td></tr>
+            <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>Faster / slower</td></tr>
+            <tr><td><kbd>S</kbd></td><td>Reshuffle</td></tr>
+            <tr><td><kbd>F</kbd></td><td>Fullscreen</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>Exit</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="psec" id="install">
+    <div class="container">
+      <p class="label">Install</p>
+      <h2>Load it in a minute.</h2>
+      <ol class="steps" style="max-width:720px;">
+        <li><div><b>Get the code</b><span>Clone the repo, or Code → Download ZIP on GitHub and unzip it.</span></div></li>
+        <li><div><b>Turn on Developer mode</b><span>Open <code>chrome://extensions</code> and flip the switch in the top-right.</span></div></li>
+        <li><div><b>Load unpacked</b><span>Select the folder. Pin the extension if you like.</span></div></li>
+        <li><div><b>Play an album</b><span>Open an album at photos.google.com, click the icon, Start slideshow.</span></div></li>
+      </ol>
+      <pre>git clone https://github.com/pivovarovanatol/gphotos-shuffle-slideshow.git</pre>
+    </div>
+  </section>
+
+  <section class="psec">
+    <div class="container">
+      <p class="label">More projects</p>
+      <div class="more">
+        <a href="/neo-matrix-rain/"><b>Neo Matrix Rain</b><span>Native digital rain screensaver for macOS</span></a>
+        <a href="/sport-highlighter/"><b>Sport Highlighter</b><span>A reel of just your kid from a full hockey game</span></a>
+        <a href="/labyrinth/"><b>Labyrinth of Reflections</b><span>Story-first RPG in Unreal Engine 5, built by AI agents</span></a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="pfoot">
+    <div class="container">
+      <p>Not affiliated with or endorsed by Google. Google Photos is a trademark of Google LLC.</p>
+      <p>Made by <a href="/">Anatoliy Pivovarov</a> · <a href="/#contact">Get in touch</a></p>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      // popup mode switch (same strings as the extension's popup.js)
+      const desc = { scraper: 'Plays the album you have open in a Google Photos tab. No setup.', picker: "Pick photos in Google's official picker (needs a one-time OAuth setup — see README)." };
+      const btnText = { scraper: '▶ Start slideshow', picker: '▶ Pick photos & start' };
+      document.querySelectorAll('.popup .mode').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.popup .mode').forEach(x => x.classList.toggle('active', x === b));
+        const m = b.dataset.mode;
+        document.getElementById('desc').textContent = desc[m];
+        document.getElementById('start').textContent = btnText[m];
+        document.getElementById('maxRow').style.display = m === 'scraper' ? '' : 'none';
+      }));
+
+      // shuffle-bag demo
+      const N = 12;
+      const hues = Array.from({ length: N }, (_, i) => Math.round(i * 360 / N));
+      const stage = document.getElementById('stage');
+      const bagEl = document.getElementById('bag');
+      const slides = hues.map((h, i) => {
+        const d = document.createElement('div');
+        d.className = 'slide';
+        d.style.background = `radial-gradient(circle at 30% 30%, hsl(${h} 80% 62%), hsl(${(h + 40) % 360} 70% 32%))`;
+        d.innerHTML = `<span>#${i + 1}</span>`;
+        stage.insertBefore(d, stage.firstChild);
+        const dot = document.createElement('i'); dot.textContent = i + 1; bagEl.appendChild(dot);
+        return d;
+      });
+      const dots = [...bagEl.children];
+      let order = [], pos = -1, timer = null, paused = false;
+      const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+      function newBag() { order = shuffle([...Array(N).keys()]); pos = -1; dots.forEach(d => { d.classList.remove('seen', 'now'); d.style.background = ''; }); }
+      function show() {
+        if (++pos >= N) newBag(), pos = 0;
+        const k = order[pos];
+        const fade = document.getElementById('fade').checked;
+        slides.forEach((s, i) => { s.style.transition = fade ? '' : 'none'; s.classList.toggle('on', i === k); });
+        dots.forEach(d => d.classList.remove('now'));
+        dots[k].classList.add('seen', 'now'); dots[k].style.background = `hsl(${hues[k]} 80% 62%)`;
+        document.getElementById('count').textContent = `${pos + 1} / ${N}`;
+      }
+      function secs() { const v = parseFloat(document.getElementById('secs').value); return Math.min(10, Math.max(1, isNaN(v) ? 2.5 : v)) * 1000; }
+      function loop() { clearTimeout(timer); if (!paused) timer = setTimeout(() => { show(); loop(); }, secs()); }
+      document.getElementById('next').onclick = () => { show(); loop(); };
+      document.getElementById('reshuffle').onclick = () => { newBag(); show(); loop(); };
+      document.getElementById('pause').onclick = e => { paused = !paused; e.target.textContent = paused ? 'Play' : 'Pause'; loop(); };
+      document.getElementById('start').onclick = () => { paused = false; document.getElementById('pause').textContent = 'Pause'; newBag(); show(); loop(); };
+      document.getElementById('secs').onchange = loop;
+      newBag(); show();
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) loop(); else { paused = true; document.getElementById('pause').textContent = 'Play'; }
+    })();
+  </script>
+</body>
+</html>
